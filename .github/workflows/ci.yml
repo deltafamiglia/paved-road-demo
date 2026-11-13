@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  # Same shape as dfplatform-status's ci.yml (DEL-734/739): self-hosted,
+  # not GitHub-hosted, since this repo lives under deltafamiglia where
+  # hosted-runner minutes are billed and build-and-push below needs
+  # registry.infra anyway (Infra-VLAN-only).
+  test-and-lint:
+    name: Test and lint
+    runs-on: [self-hosted, infra-vlan]
+    # actions/setup-node's downloaded binary doesn't run on this runner's
+    # host (glibc mismatch - same issue dfplatform-status hit). Running
+    # in node:26-slim sidesteps the host runtime; the runner already has
+    # Docker (build-and-push below depends on it).
+    container: node:26-slim
+
+    steps:
+      # node:26-slim has neither git nor ca-certificates - actions/checkout
+      # needs the former on PATH before it can run, and the latter for its
+      # https fetch from github.com to succeed.
+      - name: Install git
+        run: apt-get update && apt-get install -y --no-install-recommends git ca-certificates && rm -rf /var/lib/apt/lists/*
+
+      - uses: actions/checkout@v7
+
+      - name: npm install
+        run: npm install
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+  # Builds and pushes registry.infra:5000/demo-api and
+  # registry.infra:5000/demo-web - the images
+  # df-config/catalogue/demo-api.yaml and demo-web.yaml reference. Only on
+  # merge to main (PR builds would just be registry churn nothing ever
+  # deploys), routed onto the self-hosted runner since registry.infra is
+  # Infra-VLAN-only.
+  build-and-push:
+    name: Build and push ${{ matrix.image }}
+    needs: test-and-lint
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, infra-vlan]
+    strategy:
+      matrix:
+        include:
+          - image: demo-api
+            context: api
+          - image: demo-web
+            context: web
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # Same credential convention as dfplatform-status/api: username
+      # matches proxmox-iac's terraform/lxc_registry.tf
+      # registry_auth_username default (not secret); REGISTRY_AUTH_PASSWORD
+      # is a repo secret (Settings > Secrets and variables > Actions),
+      # set to the same value used for TF_VAR_registry_auth_password -
+      # never committed here.
+      - name: Log in to registry.infra
+        run: echo "${{ secrets.REGISTRY_AUTH_PASSWORD }}" | docker login registry.infra:5000 --username docker-registry --password-stdin
+
+      - name: Build
+        run: docker build -t registry.infra:5000/${{ matrix.image }}:${{ github.sha }} ${{ matrix.context }}
+
+      - name: Push
+        run: docker push registry.infra:5000/${{ matrix.image }}:${{ github.sha }}

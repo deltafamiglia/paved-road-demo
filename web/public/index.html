@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Paved Road Demo</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <main>
+    <h1>Paved Road Demo</h1>
+    <p class="subtitle">
+      A full-stack guestbook deployed end-to-end on the paved-road platform:
+      this page (web tier) &rarr; demo API (backend tier, SQLite) &rarr; back
+      again, all through the platform's own CI/CD, registry, service
+      discovery, reverse proxy and Cloudflare tunnel.
+    </p>
+
+    <form id="entry-form">
+      <label>
+        Name
+        <input type="text" id="author" maxlength="80" required />
+      </label>
+      <label>
+        Message
+        <textarea id="message" maxlength="2000" required></textarea>
+      </label>
+      <button type="submit">Sign the guestbook</button>
+    </form>
+
+    <p id="error" class="error" hidden></p>
+
+    <ul id="entries"></ul>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>
