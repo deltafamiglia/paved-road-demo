@@ -57,9 +57,17 @@ Curator/Guide actually placed the `demo-api` container - no hardcoded IP
 anywhere in this repo, consistent with every other Catalogue-deployed
 service.
 
-Public ingress for `demo-web` goes through the existing Cloudflare Tunnel
-+ frontend reverse-proxy path (Phase 3/4), reserved via
-`proxmox-iac/services/demo-web.yaml`.
+Public ingress for `demo-web` needs no proxmox-iac change at all: DEL-768
+already made the Cloudflare Tunnel ingress a single wildcard
+(`*.<cloudflare_zone>`, forwarded to every node's Caddy regardless of
+hostname), and `curator/docs/design.md`'s "Guide - pushing to Caddy"
+section is explicit that once a service is Catalogue-deployed, Guide
+pushes its Caddy route live the moment it self-places - including a
+brand-new hostname, not just an update to an existing one.
+`services/*.yaml`-rendered Terraform routes are only for the pre-Curator
+services (`hello-world`, `status-page`, `backend-canary`) that predate
+Guide; `demo-web` is Catalogue-deployed from day one, so it never needs
+one.
 
 ## Running locally
 
@@ -90,11 +98,11 @@ Then open `http://127.0.0.1:8081`.
    (`curator deploy demo-api`, then `curator deploy demo-web`) the same
    way DEL-716's deployment pipeline already does for every other
    Catalogue entry.
-4. **Public hostname** - `proxmox-iac/services/demo-web.yaml` (zone
-   `frontend`, hostname `demo`) reserves the Cloudflare Tunnel ingress
-   rule; once `demo-web` self-places, Guide pushes the live route into
-   the web-zone Caddy fleet and the zero-upstream placeholder resolves to
-   a real backend.
+4. **Public hostname** - nothing to do here: `demo.<cloudflare_zone>`
+   already resolves through DEL-768's existing wildcard Cloudflare
+   ingress, and Guide pushes `demo-web`'s live route into the web-zone
+   Caddy fleet the moment it self-places - see "Service discovery and
+   routing" above.
 5. **Verify** - `https://demo.<cloudflare_zone>` loads the guestbook,
    submitting an entry round-trips through `demo-web` -> `demo-api` ->
    SQLite and back; `curl https://demo.<cloudflare_zone>/healthz` and the
