@@ -5,10 +5,9 @@ const { openDb } = require('./db');
 const { validateEntryInput, createEntry, listEntries } = require('./lib');
 
 const PORT = process.env.PORT || 8080;
-// Catalogue's resources.disk_gb (df-config/catalogue/demo-api.yaml) backs
-// this path with a real persisted volume on the compute node - see that
-// entry's comment for why the path lives under /data rather than the
-// container's own ephemeral filesystem.
+// Wherever this runs, /data is expected to be a persistent volume -
+// this path is deliberately outside the app's own directory so it
+// survives a redeploy of the code around it.
 const DB_PATH = process.env.DB_PATH || '/data/demo.db';
 
 function send(res, status, body) {
@@ -43,11 +42,9 @@ function readBody(req) {
 
 function createRequestHandler(db) {
   return async function handleRequest(req, res) {
-    // Caddy's upstream health check hits this with no auth, same
-    // unauthenticated-/healthz convention dfplatform-status/api uses -
-    // this demo has no auth at all (it's a public guestbook), but keeping
-    // /healthz as its own fast path means it never depends on the DB
-    // query below.
+    // Kept unauthenticated and independent of the DB query below, so
+    // whatever is checking this service's liveness never depends on
+    // the database being reachable.
     if (req.method === 'GET' && req.url === '/healthz') {
       send(res, 200, { status: 'ok' });
       return;

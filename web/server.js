@@ -6,14 +6,10 @@ const path = require('node:path');
 const { isApiPath, staticPathFor } = require('./lib');
 
 const PORT = process.env.PORT || 8080;
-// demo-api's address (DEL-720) - the backend tier isn't reachable from
-// the internet (networking.tf's VLAN isolation), so this server does the
-// server-side hop, the same Web -> Backend path
-// docs/service-discovery-design.md's recommendation and DEL-719's
-// df.protected zone both exist for. `demo-api` is the Host header Guide
-// pushed into the backend zone's Caddy once demo-api self-placed - this
-// never hardcodes an IP.
-const API_URL = process.env.API_URL || 'http://demo-api.df.protected/api/entries';
+// The browser never calls the API directly - this server does the
+// server-side hop instead, so API_URL only ever needs to be reachable
+// from here, not from the public internet.
+const API_URL = process.env.API_URL || 'http://localhost:8080/api/entries';
 
 const CONTENT_TYPES = {
   '.html': 'text/html; charset=utf-8',

@@ -2,10 +2,10 @@
 
 module.exports = [
   {
-    ignores: ['node_modules/**'],
+    ignores: ['node_modules/**', 'dist/**'],
   },
   {
-    files: ['api/**/*.js', 'web/*.js'],
+    files: ['api/**/*.js', 'web/*.js', 'scripts/**/*.js'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'commonjs',

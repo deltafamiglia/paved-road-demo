@@ -1,12 +1,13 @@
 {
   "name": "paved-road-demo",
   "private": true,
-  "description": "Multi-service reference demo (DEL-720): a frontend+backend guestbook app deployed end-to-end through the paved-road platform's own CI/CD, registry, service discovery, reverse proxy and Cloudflare tunnel.",
+  "description": "A small guestbook app with a web frontend and a backend API + SQLite database.",
   "engines": {
     "node": ">=24"
   },
   "scripts": {
-    "test": "node api/test.js && node web/test.js",
+    "test": "node api/test.js && node web/test.js && node scripts/build.test.js",
+    "build": "node scripts/build.js",
     "lint": "eslint ."
   },
   "devDependencies": {
