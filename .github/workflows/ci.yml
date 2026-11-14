@@ -46,13 +46,30 @@ jobs:
       # this artifact into a running container know a new one exists,
       # without this repo knowing anything about what happens to it next
       # (no registry, no image name, no deploy mechanism named here).
-      # PLATFORM_NOTIFY_TOKEN is a PAT scoped only to send this one event
-      # type to the target repo - set in this repo's own
-      # Settings > Secrets and variables > Actions.
+      #
+      # Mints a short-lived (~1h) installation token from the shared
+      # "Delta Famiglia Platform CI" GitHub App instead of a long-lived
+      # PAT - same pattern Cloudflare Pages' own GitHub App uses for its
+      # repo access. The App is installed on just this repo + curator,
+      # with Contents: write there (what repository_dispatch needs) and
+      # nothing else; PLATFORM_APP_ID/PLATFORM_APP_PRIVATE_KEY are this
+      # repo's copy of that App's credentials (Settings > Secrets and
+      # variables > Actions) - the App itself, and its installation on
+      # both repos, is a one-time setup step in the GitHub org UI, not
+      # something this workflow creates.
+      - uses: actions/create-github-app-token@v2
+        if: github.event_name == 'push'
+        id: platform-app-token
+        with:
+          app-id: ${{ secrets.PLATFORM_APP_ID }}
+          private-key: ${{ secrets.PLATFORM_APP_PRIVATE_KEY }}
+          owner: deltafamiglia
+          repositories: curator
+
       - name: Notify platform of new build
         if: github.event_name == 'push'
         env:
-          GH_TOKEN: ${{ secrets.PLATFORM_NOTIFY_TOKEN }}
+          GH_TOKEN: ${{ steps.platform-app-token.outputs.token }}
         run: |
           gh api repos/deltafamiglia/curator/dispatches \
             -f event_type=demo-build \
