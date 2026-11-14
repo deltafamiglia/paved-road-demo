@@ -1,0 +1,16 @@
+{
+  "name": "paved-road-demo",
+  "private": true,
+  "description": "A small guestbook app with a web frontend and a backend API + SQLite database.",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "test": "node api/test.js && node web/test.js && node scripts/build.test.js",
+    "build": "node scripts/build.js",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "eslint": "^10.0.0"
+  }
+}
