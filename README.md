@@ -33,3 +33,7 @@ API_URL=http://127.0.0.1:8080/api/entries PORT=8081 node web/server.js
 ```
 
 Then open `http://127.0.0.1:8081`.
+
+---
+
+_Verified end-to-end on the paved-road platform (DEL-720)._
