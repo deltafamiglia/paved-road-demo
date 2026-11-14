@@ -41,3 +41,21 @@ jobs:
         with:
           name: build-${{ github.sha }}
           path: dist/
+
+      # Only on a real merge to main (not PRs) - lets whatever packages
+      # this artifact into a running container know a new one exists,
+      # without this repo knowing anything about what happens to it next
+      # (no registry, no image name, no deploy mechanism named here).
+      # PLATFORM_NOTIFY_TOKEN is a PAT scoped only to send this one event
+      # type to the target repo - set in this repo's own
+      # Settings > Secrets and variables > Actions.
+      - name: Notify platform of new build
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ secrets.PLATFORM_NOTIFY_TOKEN }}
+        run: |
+          gh api repos/deltafamiglia/curator/dispatches \
+            -f event_type=demo-build \
+            -f "client_payload[repo]=${{ github.repository }}" \
+            -f "client_payload[sha]=${{ github.sha }}" \
+            -f "client_payload[run_id]=${{ github.run_id }}"
