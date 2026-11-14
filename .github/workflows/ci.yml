@@ -9,19 +9,18 @@ on:
 jobs:
   test-lint-build:
     name: Test, lint and build
-    runs-on: [self-hosted, infra-vlan]
-    # actions/setup-node's downloaded binary doesn't run on this runner's
-    # host (glibc mismatch), so the job runs inside node:26-slim instead.
-    container: node:26-slim
+    # GitHub-hosted, not the self-hosted infra-vlan runner: this job only
+    # tests and builds, so it needs nothing inside the platform network.
+    # This repo is public, and public repos must never run on a
+    # self-hosted runner (any fork PR could execute code on it).
+    runs-on: ubuntu-latest
 
     steps:
-      # node:26-slim has neither git nor ca-certificates - actions/checkout
-      # needs the former on PATH before it can run, and the latter for its
-      # https fetch from github.com to succeed.
-      - name: Install git
-        run: apt-get update && apt-get install -y --no-install-recommends git ca-certificates && rm -rf /var/lib/apt/lists/*
-
       - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
 
       - name: npm install
         run: npm install
@@ -38,7 +37,7 @@ jobs:
       # Hands off the build artifact (dist/api, dist/web) for whatever
       # consumes it next - packaging/deployment is downstream of this
       # repo, not part of it.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: build-${{ github.sha }}
           path: dist/
